@@ -76,7 +76,7 @@
       color: var(--text-soft);
     }
 
-    input {
+    input, select, textarea {
       padding: 8px;
       border-radius: 8px;
       border: 1px solid #334155;
@@ -85,7 +85,7 @@
       font-size: 0.85rem;
     }
 
-    input:focus {
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--accent);
     }
@@ -104,6 +104,18 @@
 
     .btn:hover {
       filter: brightness(1.08);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-danger {
+      border-color: #f87171;
+      background: #f87171;
+      color: white;
     }
 
     .login-error {
@@ -142,6 +154,12 @@
       gap: 20px;
     }
 
+    @media (max-width: 900px) {
+      .calendar-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* ==========================
        CALENDARIO
     ========================== */
@@ -156,7 +174,9 @@
     .calendar-controls {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       margin-bottom: 14px;
+      gap: 10px;
     }
 
     .calendar-grid {
@@ -175,16 +195,22 @@
       background: #0f172a;
       color: var(--text-soft);
       border-bottom: 1px solid #1e293b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .day {
-      padding: 10px;
+      padding: 6px 6px 8px;
       min-height: 90px;
       border-right: 1px solid #1e293b;
       border-bottom: 1px solid #1e293b;
       cursor: pointer;
       transition: 0.2s;
       position: relative;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .day:hover {
@@ -193,6 +219,11 @@
 
     .day.today {
       background: rgba(56, 189, 248, 0.15);
+    }
+
+    .day-number {
+      font-weight: 600;
+      color: #e2e8f0;
     }
 
     .event-dot {
@@ -205,12 +236,41 @@
       right: 6px;
     }
 
+    .event-list-mini {
+      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .event-mini {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      padding: 2px 4px;
+      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-mini strong {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    /* ==========================
+       PANEL DERECHO
+    ========================== */
     .side-panel {
       background: #0f172a;
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 18px;
       box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .event-card {
@@ -219,6 +279,7 @@
       padding: 12px;
       margin-bottom: 10px;
       background: #020617;
+      font-size: 0.85rem;
     }
 
     .event-actions {
@@ -226,18 +287,6 @@
       display: flex;
       justify-content: flex-end;
       gap: 10px;
-    }
-
-    .btn-secondary {
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-    }
-
-    .btn-danger {
-      border-color: #f87171;
-      background: #f87171;
-      color: white;
     }
 
     /* ==========================
@@ -261,11 +310,14 @@
       max-width: 400px;
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .modal-title {
       font-size: 1.2rem;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
     }
 
     textarea {
@@ -359,7 +411,7 @@
 
     <div class="field-group">
       <label class="field-label">Fecha</label>
-      <input type="text" id="field-date" readonly />
+      <input type="date" id="field-date" />
     </div>
 
     <div class="field-group">
@@ -375,6 +427,8 @@
         <option value="Reel">Reel</option>
         <option value="TikTok">TikTok</option>
         <option value="Post feed">Post feed</option>
+        <option value="Email">Email</option>
+        <option value="Otro">Otro</option>
       </select>
     </div>
 
@@ -385,7 +439,15 @@
 
     <div class="field-group">
       <label class="field-label">Plataforma</label>
-      <input type="text" id="field-platform"/>
+      <select id="field-platform">
+        <option value="">Seleccionar…</option>
+        <option value="Instagram">Instagram</option>
+        <option value="TikTok">TikTok</option>
+        <option value="Facebook">Facebook</option>
+        <option value="YouTube">YouTube</option>
+        <option value="Email">Email</option>
+        <option value="Otro">Otro</option>
+      </select>
     </div>
 
     <div class="field-group">
@@ -405,9 +467,6 @@
      JS APP
 ========================================= -->
 <script>
-/* ===========================================================
-   CONFIG & STATE
-=========================================================== */
 const API_BASE = "/api";
 
 const state = {
@@ -418,10 +477,7 @@ const state = {
   user: null,
 };
 
-
-/* ===========================================================
-   LOGIN LOGIC
-=========================================================== */
+/* ========== LOGIN ========== */
 const loginOverlay = document.getElementById("login-overlay");
 const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
@@ -464,10 +520,11 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   location.reload();
 });
 
+/* ========== CALENDARIO BASE ========== */
+function formatDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
 
-/* ===========================================================
-   CALENDARIO
-=========================================================== */
 function initCalendar() {
   const now = new Date();
   state.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -483,10 +540,6 @@ function initCalendar() {
     state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() + 1, 1);
     loadEventsForMonth();
   };
-}
-
-function formatDateKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
 
 async function loadEventsForMonth() {
@@ -530,8 +583,6 @@ function renderCalendar() {
   const firstDay = new Date(year, month, 1);
   const startIndex = (firstDay.getDay()+6)%7;
   const totalDays = new Date(year, month+1, 0).getDate();
-
-  // previous month
   const prevDays = new Date(year, month, 0).getDate();
 
   const cells = [];
@@ -552,19 +603,39 @@ function renderCalendar() {
     }
 
     const key = formatDateKey(date);
+    const events = state.eventsByDate[key] || [];
 
     const div = document.createElement("div");
     div.className = "day";
-    div.textContent = dayNum;
 
     if (formatDateKey(date) === formatDateKey(new Date())) {
       div.classList.add("today");
     }
 
-    if (state.eventsByDate[key] && state.eventsByDate[key].length > 0) {
+    const number = document.createElement("div");
+    number.className = "day-number";
+    number.textContent = dayNum;
+    div.appendChild(number);
+
+    if (events.length > 0) {
+      // puntito
       const dot = document.createElement("div");
       dot.className = "event-dot";
       div.appendChild(dot);
+
+      // mini lista
+      const miniList = document.createElement("div");
+      miniList.className = "event-list-mini";
+
+      events.slice(0, 3).forEach((ev) => {
+        const item = document.createElement("div");
+        item.className = "event-mini";
+        const time = ev.time?.slice(0, 5) || "";
+        item.innerHTML = `<strong>${time}</strong> ${ev.channel || ""} – ${ev.title}`;
+        miniList.appendChild(item);
+      });
+
+      div.appendChild(miniList);
     }
 
     div.onclick = () => {
@@ -578,10 +649,7 @@ function renderCalendar() {
   cells.forEach(c => daysEl.appendChild(c));
 }
 
-
-/* ===========================================================
-   PANEL DERECHO
-=========================================================== */
+/* ========== PANEL DERECHO ========== */
 function renderSidePanel() {
   if (!state.selectedDate) return;
 
@@ -612,28 +680,22 @@ function renderSidePanel() {
     editBtn.className = "btn-secondary btn";
     editBtn.textContent = "Editar";
     editBtn.onclick = () => openModal(key, ev);
-
     actions.appendChild(editBtn);
 
-    if (state.user.role === "admin") {
+    if (state.user && state.user.role === "admin") {
       const delBtn = document.createElement("button");
       delBtn.className = "btn-danger btn";
       delBtn.textContent = "Eliminar";
       delBtn.onclick = () => deleteEvent(ev.id);
-
       actions.appendChild(delBtn);
     }
 
     card.appendChild(actions);
-
     list.appendChild(card);
   }
 }
 
-
-/* ===========================================================
-   MODAL
-=========================================================== */
+/* ========== MODAL ========== */
 const modalBackdrop = document.getElementById("modal-backdrop");
 const fieldDate = document.getElementById("field-date");
 const fieldTime = document.getElementById("field-time");
@@ -644,20 +706,20 @@ const fieldNotes = document.getElementById("field-notes");
 
 document.getElementById("new-event-btn").onclick = () => {
   if (!state.selectedDate) return;
-
   openModal(formatDateKey(state.selectedDate));
 };
 
-document.getElementById("modal-cancel").onclick = () => modalBackdrop.style.display = "none";
-
+document.getElementById("modal-cancel").onclick = () => {
+  modalBackdrop.style.display = "none";
+};
 
 function openModal(dateKey, event = null) {
   modalBackdrop.style.display = "flex";
 
   fieldDate.value = dateKey;
-  fieldTime.value = event ? event.time : "09:00";
+  fieldTime.value = event ? event.time || "09:00" : "09:00";
   fieldChannel.value = event ? event.channel || "" : "";
-  fieldTitle.value = event ? event.title : "";
+  fieldTitle.value = event ? event.title || "" : "";
   fieldPlatform.value = event ? event.platform || "" : "";
   fieldNotes.value = event ? event.notes || "" : "";
 
@@ -667,18 +729,17 @@ function openModal(dateKey, event = null) {
 document.getElementById("modal-save").onclick = async () => {
   const date = fieldDate.value;
   const time = fieldTime.value;
-  const title = fieldTitle.value;
+  const title = fieldTitle.value.trim();
   const channel = fieldChannel.value;
   const platform = fieldPlatform.value;
-  const notes = fieldNotes.value;
+  const notes = fieldNotes.value.trim();
 
-  if (!time || !title) {
-    alert("Completá hora y título.");
+  if (!date || !time || !title) {
+    alert("Completá fecha, hora y título.");
     return;
   }
 
   const payload = { date, time, title, channel, platform, notes };
-
   await saveEvent(payload, state.editingEventId);
   modalBackdrop.style.display = "none";
 };
@@ -713,6 +774,11 @@ async function deleteEvent(id) {
   await loadEventsForMonth();
 }
 
+/* ========== BOTÓN NUEVO EVENTO DESDE PANEL ========== */
+document.getElementById("new-event-btn").addEventListener("click", () => {
+  const date = state.selectedDate || new Date();
+  openModal(formatDateKey(date));
+});
 </script>
 
 </body>
