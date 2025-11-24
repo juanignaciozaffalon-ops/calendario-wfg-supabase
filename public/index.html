@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Calendario WFG</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #111827;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --text: #f8fafc;
+      --text-soft: #cbd5e1;
+      --border: #243244;
+      --radius: 14px;
+      --shadow: 0 18px 40px rgba(0,0,0,0.45);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(160deg, #0b1321, #020617);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* ==========================
+       LOGIN OVERLAY
+    ========================== */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .login-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .login-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      margin-bottom: 12px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-label {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+    }
+
+    input {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #0b1120;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .login-error {
+      color: #fca5a5;
+      font-size: 0.8rem;
+      margin-top: 6px;
+      display: none;
+    }
+
+    /* ==========================
+       APP
+    ========================== */
+    .app {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-title {
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+
+    .calendar-container {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr;
+      gap: 20px;
+    }
+
+    /* ==========================
+       CALENDARIO
+    ========================== */
+    .calendar {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .calendar-controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: #020617;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid #1e293b;
+    }
+
+    .weekday {
+      padding: 10px;
+      text-align: center;
+      font-size: 0.75rem;
+      background: #0f172a;
+      color: var(--text-soft);
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .day {
+      padding: 10px;
+      min-height: 90px;
+      border-right: 1px solid #1e293b;
+      border-bottom: 1px solid #1e293b;
+      cursor: pointer;
+      transition: 0.2s;
+      position: relative;
+    }
+
+    .day:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .day.today {
+      background: rgba(56, 189, 248, 0.15);
+    }
+
+    .event-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      position: absolute;
+      top: 6px;
+      right: 6px;
+    }
+
+    .side-panel {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .event-card {
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #020617;
+    }
+
+    .event-actions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-danger {
+      border-color: #f87171;
+      background: #f87171;
+      color: white;
+    }
+
+    /* ==========================
+       MODAL
+    ========================== */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1500;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      background: #0f172a;
+      padding: 20px;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- =========================================
+     LOGIN
+========================================= -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-title">Acceso interno WFG</div>
+    <div class="login-subtitle">Ingresá con tu usuario:</div>
+
+    <form id="login-form">
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input type="text" id="login-email" placeholder="juan@warensfinancial.com"/>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Contraseña</label>
+        <input type="password" id="login-password" placeholder="********"/>
+      </div>
+
+      <div class="login-error" id="login-error"></div>
+
+      <button class="btn" style="margin-top:10px;">Entrar</button>
+    </form>
+  </div>
+</div>
+
+
+<!-- =========================================
+     APP UI
+========================================= -->
+<div class="app">
+  <div class="app-header">
+    <div class="app-title">📅 Calendario Marketing WFG</div>
+
+    <div>
+      <button class="btn" id="logout-btn">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="calendar-container">
+
+    <!-- CALENDARIO -->
+    <div class="calendar">
+      <div class="calendar-controls">
+        <button class="btn-secondary btn" id="prev-month">‹ Mes</button>
+        <div id="month-title"></div>
+        <button class="btn-secondary btn" id="next-month">Mes ›</button>
+      </div>
+
+      <div class="calendar-grid">
+        <div class="weekday">Lun</div>
+        <div class="weekday">Mar</div>
+        <div class="weekday">Mié</div>
+        <div class="weekday">Jue</div>
+        <div class="weekday">Vie</div>
+        <div class="weekday">Sáb</div>
+        <div class="weekday">Dom</div>
+
+        <div id="calendar-days" style="display: contents;"></div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO -->
+    <div class="side-panel">
+      <h3 id="side-date">Seleccioná un día</h3>
+      <button class="btn" id="new-event-btn" style="margin-bottom: 12px;">+ Nuevo contenido</button>
+      <div id="events-list"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =========================================
+     MODAL EVENTO
+========================================= -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Nuevo evento</div>
+
+    <div class="field-group">
+      <label class="field-label">Fecha</label>
+      <input type="text" id="field-date" readonly />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Hora</label>
+      <input type="time" id="field-time"/>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Tipo</label>
+      <select id="field-channel">
+        <option value="">Seleccionar…</option>
+        <option value="Historia">Historia</option>
+        <option value="Reel">Reel</option>
+        <option value="TikTok">TikTok</option>
+        <option value="Post feed">Post feed</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Título</label>
+      <input type="text" id="field-title"/>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Plataforma</label>
+      <input type="text" id="field-platform"/>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Notas</label>
+      <textarea id="field-notes"></textarea>
+    </div>
+
+    <div style="margin-top:12px; display:flex; justify-content:space-between;">
+      <button class="btn-secondary btn" id="modal-cancel">Cancelar</button>
+      <button class="btn" id="modal-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- =========================================
+     JS APP
+========================================= -->
+<script>
+/* ===========================================================
+   CONFIG & STATE
+=========================================================== */
+const API_BASE = "/api";
+
+const state = {
+  currentMonth: null,
+  selectedDate: null,
+  eventsByDate: {},
+  editingEventId: null,
+  user: null,
+};
+
+
+/* ===========================================================
+   LOGIN LOGIC
+=========================================================== */
+const loginOverlay = document.getElementById("login-overlay");
+const loginForm = document.getElementById("login-form");
+const loginError = document.getElementById("login-error");
+
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value.trim();
+
+  loginError.style.display = "none";
+
+  const res = await fetch(`${API_BASE}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    loginError.textContent = data.error || "Error de inicio de sesión";
+    loginError.style.display = "block";
+    return;
+  }
+
+  const data = await res.json();
+  state.user = data.user;
+
+  loginOverlay.style.display = "none";
+  initCalendar();
+});
+
+document.getElementById("logout-btn").addEventListener("click", async () => {
+  await fetch(`${API_BASE}/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  location.reload();
+});
+
+
+/* ===========================================================
+   CALENDARIO
+=========================================================== */
+function initCalendar() {
+  const now = new Date();
+  state.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  state.selectedDate = now;
+  loadEventsForMonth();
+
+  document.getElementById("prev-month").onclick = () => {
+    state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() - 1, 1);
+    loadEventsForMonth();
+  };
+
+  document.getElementById("next-month").onclick = () => {
+    state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() + 1, 1);
+    loadEventsForMonth();
+  };
+}
+
+function formatDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+
+async function loadEventsForMonth() {
+  const first = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth(), 1);
+  const last = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth()+1, 0);
+
+  const start = formatDateKey(first);
+  const end = formatDateKey(last);
+
+  const res = await fetch(`${API_BASE}/events?start=${start}&end=${end}`, {
+    credentials: "include"
+  });
+
+  if (res.status === 401) {
+    loginOverlay.style.display = "flex";
+    return;
+  }
+
+  const events = await res.json();
+
+  state.eventsByDate = {};
+  for (const ev of events) {
+    if (!state.eventsByDate[ev.date]) state.eventsByDate[ev.date] = [];
+    state.eventsByDate[ev.date].push(ev);
+  }
+
+  renderCalendar();
+  renderSidePanel();
+}
+
+function renderCalendar() {
+  const daysEl = document.getElementById("calendar-days");
+  daysEl.innerHTML = "";
+
+  const year = state.currentMonth.getFullYear();
+  const month = state.currentMonth.getMonth();
+
+  document.getElementById("month-title").textContent =
+    state.currentMonth.toLocaleDateString("es-ES", { month:"long", year:"numeric" });
+
+  const firstDay = new Date(year, month, 1);
+  const startIndex = (firstDay.getDay()+6)%7;
+  const totalDays = new Date(year, month+1, 0).getDate();
+
+  // previous month
+  const prevDays = new Date(year, month, 0).getDate();
+
+  const cells = [];
+
+  for (let i = 0; i < 42; i++) {
+    let dayNum;
+    let date;
+
+    if (i < startIndex) {
+      dayNum = prevDays - (startIndex - 1 - i);
+      date = new Date(year, month-1, dayNum);
+    } else if (i >= startIndex + totalDays) {
+      dayNum = i - (startIndex + totalDays) + 1;
+      date = new Date(year, month+1, dayNum);
+    } else {
+      dayNum = i - startIndex + 1;
+      date = new Date(year, month, dayNum);
+    }
+
+    const key = formatDateKey(date);
+
+    const div = document.createElement("div");
+    div.className = "day";
+    div.textContent = dayNum;
+
+    if (formatDateKey(date) === formatDateKey(new Date())) {
+      div.classList.add("today");
+    }
+
+    if (state.eventsByDate[key] && state.eventsByDate[key].length > 0) {
+      const dot = document.createElement("div");
+      dot.className = "event-dot";
+      div.appendChild(dot);
+    }
+
+    div.onclick = () => {
+      state.selectedDate = date;
+      renderSidePanel();
+    };
+
+    cells.push(div);
+  }
+
+  cells.forEach(c => daysEl.appendChild(c));
+}
+
+
+/* ===========================================================
+   PANEL DERECHO
+=========================================================== */
+function renderSidePanel() {
+  if (!state.selectedDate) return;
+
+  const key = formatDateKey(state.selectedDate);
+
+  document.getElementById("side-date").textContent =
+    state.selectedDate.toLocaleDateString("es-ES", { weekday:"long", day:"numeric", month:"long" });
+
+  const list = document.getElementById("events-list");
+  list.innerHTML = "";
+
+  const events = state.eventsByDate[key] || [];
+
+  for (const ev of events) {
+    const card = document.createElement("div");
+    card.className = "event-card";
+
+    card.innerHTML = `
+      <div><strong>${ev.time.slice(0,5)}</strong> — ${ev.title}</div>
+      <div style="color:#94a3b8; font-size:0.85rem;">${ev.channel || ""} | ${ev.platform || ""}</div>
+      ${ev.notes ? `<div style="margin-top:6px;">${ev.notes}</div>` : ""}
+    `;
+
+    const actions = document.createElement("div");
+    actions.className = "event-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn-secondary btn";
+    editBtn.textContent = "Editar";
+    editBtn.onclick = () => openModal(key, ev);
+
+    actions.appendChild(editBtn);
+
+    if (state.user.role === "admin") {
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn-danger btn";
+      delBtn.textContent = "Eliminar";
+      delBtn.onclick = () => deleteEvent(ev.id);
+
+      actions.appendChild(delBtn);
+    }
+
+    card.appendChild(actions);
+
+    list.appendChild(card);
+  }
+}
+
+
+/* ===========================================================
+   MODAL
+=========================================================== */
+const modalBackdrop = document.getElementById("modal-backdrop");
+const fieldDate = document.getElementById("field-date");
+const fieldTime = document.getElementById("field-time");
+const fieldChannel = document.getElementById("field-channel");
+const fieldTitle = document.getElementById("field-title");
+const fieldPlatform = document.getElementById("field-platform");
+const fieldNotes = document.getElementById("field-notes");
+
+document.getElementById("new-event-btn").onclick = () => {
+  if (!state.selectedDate) return;
+
+  openModal(formatDateKey(state.selectedDate));
+};
+
+document.getElementById("modal-cancel").onclick = () => modalBackdrop.style.display = "none";
+
+
+function openModal(dateKey, event = null) {
+  modalBackdrop.style.display = "flex";
+
+  fieldDate.value = dateKey;
+  fieldTime.value = event ? event.time : "09:00";
+  fieldChannel.value = event ? event.channel || "" : "";
+  fieldTitle.value = event ? event.title : "";
+  fieldPlatform.value = event ? event.platform || "" : "";
+  fieldNotes.value = event ? event.notes || "" : "";
+
+  state.editingEventId = event ? event.id : null;
+}
+
+document.getElementById("modal-save").onclick = async () => {
+  const date = fieldDate.value;
+  const time = fieldTime.value;
+  const title = fieldTitle.value;
+  const channel = fieldChannel.value;
+  const platform = fieldPlatform.value;
+  const notes = fieldNotes.value;
+
+  if (!time || !title) {
+    alert("Completá hora y título.");
+    return;
+  }
+
+  const payload = { date, time, title, channel, platform, notes };
+
+  await saveEvent(payload, state.editingEventId);
+  modalBackdrop.style.display = "none";
+};
+
+async function saveEvent(payload, id = null) {
+  const method = id ? "PUT" : "POST";
+  const url = id ? `${API_BASE}/events/${id}` : `${API_BASE}/events`;
+
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 401) {
+    loginOverlay.style.display = "flex";
+    return;
+  }
+
+  await loadEventsForMonth();
+}
+
+async function deleteEvent(id) {
+  if (!confirm("¿Eliminar evento? (Solo admin)")) return;
+
+  await fetch(`${API_BASE}/events/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  await loadEventsForMonth();
+}
+
+</script>
+
+</body>
+</html>
