@@ -38,7 +38,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // poner true en Render con HTTPS
+      secure: process.env.NODE_ENV === "production", // true en Render, false local
       sameSite: "lax",
     },
   })
