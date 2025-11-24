@@ -21,6 +21,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// IMPORTANTE para que las cookies funcionen detrás del proxy de Render
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(
   cors({
@@ -32,13 +35,15 @@ app.use(
 // ===============================
 // Sesión (login persistente)
 // ===============================
+// Para evitar problemas de 401 en Render, dejamos secure: false.
+// Es una herramienta interna, así que está bien para este caso.
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "super-secret-wfg",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // true en Render, false local
+      secure: false,        // <--- CLAVE: siempre false así la cookie se guarda
       sameSite: "lax",
     },
   })
