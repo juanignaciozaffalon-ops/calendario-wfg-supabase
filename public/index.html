@@ -153,6 +153,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
     }
 
     .app-title {
@@ -187,8 +188,29 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
       gap: 10px;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .view-btn {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #1e293b;
+      background: #020617;
+      color: var(--text-soft);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .view-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
     }
 
     .calendar-grid {
@@ -260,15 +282,56 @@
       color: #9ca3af;
       padding: 2px 4px;
       border-radius: 4px;
-      background: rgba(15, 23, 42, 0.9);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      border-left: 3px solid transparent;
+      background: rgba(15, 23, 42, 0.9);
     }
 
-    .event-mini strong {
+    .event-mini.channel-Story {
+      border-left-color: #38bdf8;
+    }
+    .event-mini.channel-Reel {
+      border-left-color: #a855f7;
+    }
+    .event-mini.channel-TikTok {
+      border-left-color: #22c55e;
+    }
+    .event-mini.channel-Carrusel-posteo {
+      border-left-color: #eab308;
+    }
+
+    /* ==========================
+       VISTA SEMANAL
+    ========================== */
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .week-day-column {
+      background: #020617;
+      border-radius: 10px;
+      border: 1px solid #1e293b;
+      padding: 6px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .week-day-header {
+      font-size: 0.75rem;
+      font-weight: 600;
       color: #e5e7eb;
-      font-weight: 500;
+    }
+
+    .week-day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     /* ==========================
@@ -285,6 +348,28 @@
       gap: 10px;
     }
 
+    .filters {
+      margin: 8px 0 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filters-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .filters input, .filters select {
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      .filters-row {
+        flex-direction: column;
+      }
+    }
+
     .event-card {
       border: 1px solid #1e293b;
       border-radius: 8px;
@@ -298,7 +383,7 @@
       margin-top: 10px;
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
@@ -413,22 +498,58 @@
         <button class="btn-secondary btn" id="next-month">Mes ›</button>
       </div>
 
-      <div class="calendar-grid">
-        <div class="weekday">Lun</div>
-        <div class="weekday">Mar</div>
-        <div class="weekday">Mié</div>
-        <div class="weekday">Jue</div>
-        <div class="weekday">Vie</div>
-        <div class="weekday">Sáb</div>
-        <div class="weekday">Dom</div>
+      <div class="view-toggle">
+        <button class="view-btn active" id="view-month-btn">Vista mensual</button>
+        <button class="view-btn" id="view-week-btn">Vista semanal</button>
+      </div>
 
-        <div id="calendar-days" style="display: contents;"></div>
+      <div id="month-view">
+        <div class="calendar-grid">
+          <div class="weekday">Lun</div>
+          <div class="weekday">Mar</div>
+          <div class="weekday">Mié</div>
+          <div class="weekday">Jue</div>
+          <div class="weekday">Vie</div>
+          <div class="weekday">Sáb</div>
+          <div class="weekday">Dom</div>
+
+          <div id="calendar-days" style="display: contents;"></div>
+        </div>
+      </div>
+
+      <div id="week-view" style="display:none; margin-top:8px;">
+        <div id="week-title" style="margin-bottom:6px; font-size:0.9rem; color:#e5e7eb;"></div>
+        <div class="week-grid" id="week-grid"></div>
       </div>
     </div>
 
     <!-- PANEL DERECHO -->
     <div class="side-panel">
       <h3 id="side-date">Seleccioná un día</h3>
+
+      <div class="filters">
+        <input id="search-input" type="text" placeholder="Buscar contenido..." />
+        <div class="filters-row">
+          <select id="filter-type">
+            <option value="">Tipo: todos</option>
+            <option value="Story">Story</option>
+            <option value="Reel">Reel</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Carrusel/posteo">Carrusel/posteo</option>
+          </select>
+          <select id="filter-platform">
+            <option value="">Plataforma: todas</option>
+            <option value="Instagram">Instagram</option>
+            <option value="TikTok">TikTok</option>
+          </select>
+        </div>
+        <select id="filter-status">
+          <option value="all">Estado: todos</option>
+          <option value="pending">Solo pendiente</option>
+          <option value="posted">Solo posteado</option>
+        </select>
+      </div>
+
       <button class="btn" id="new-event-btn" style="margin-bottom: 12px;">+ Nuevo contenido</button>
       <div id="events-list"></div>
     </div>
@@ -502,9 +623,19 @@ const state = {
   currentMonth: null,
   selectedDate: null,
   eventsByDate: {},
+  eventsById: {},
   editingEventId: null,
   user: null,
+  viewMode: "month",
+  filters: {
+    search: "",
+    type: "",
+    platform: "",
+    status: "all",
+  },
 };
+
+let draggedEventId = null;
 
 /* ========== LOGIN ========== */
 const loginOverlay = document.getElementById("login-overlay");
@@ -549,11 +680,47 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   location.reload();
 });
 
-/* ========== CALENDARIO BASE ========== */
+/* ========== HELPERS ========== */
 function formatDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
 
+function evTimeToInput(t) {
+  if (!t) return "";
+  return t.slice(0, 5); // "09:00:00" → "09:00"
+}
+
+function matchesFilters(ev) {
+  const { search, type, platform, status } = state.filters;
+
+  if (type && ev.channel !== type) return false;
+  if (platform && ev.platform !== platform) return false;
+
+  if (status === "posted" && !ev.posted) return false;
+  if (status === "pending" && ev.posted) return false;
+
+  if (search) {
+    const s = search.toLowerCase();
+    const text = [ev.title, ev.notes, ev.channel, ev.platform].join(" ").toLowerCase();
+    if (!text.includes(s)) return false;
+  }
+
+  return true;
+}
+
+function getFilteredEventsForDate(dateKey) {
+  const list = state.eventsByDate[dateKey] || [];
+  return list.filter(matchesFilters);
+}
+
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = (d.getDay() + 6) % 7; // 0 = lunes
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+/* ========== CALENDARIO BASE ========== */
 function initCalendar() {
   const now = new Date();
   state.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -569,6 +736,34 @@ function initCalendar() {
     state.currentMonth = new Date(state.currentMonth.getFullYear(), state.currentMonth.getMonth() + 1, 1);
     loadEventsForMonth();
   };
+
+  document.getElementById("view-month-btn").onclick = () => setViewMode("month");
+  document.getElementById("view-week-btn").onclick = () => setViewMode("week");
+}
+
+function setViewMode(mode) {
+  state.viewMode = mode;
+
+  const monthView = document.getElementById("month-view");
+  const weekView = document.getElementById("week-view");
+  const btnMonth = document.getElementById("view-month-btn");
+  const btnWeek = document.getElementById("view-week-btn");
+
+  if (mode === "month") {
+    monthView.style.display = "block";
+    weekView.style.display = "none";
+    btnMonth.classList.add("active");
+    btnWeek.classList.remove("active");
+  } else {
+    monthView.style.display = "none";
+    weekView.style.display = "block";
+    btnWeek.classList.add("active");
+    btnMonth.classList.remove("active");
+  }
+
+  renderCalendar();
+  renderWeekView();
+  renderSidePanel();
 }
 
 async function loadEventsForMonth() {
@@ -590,12 +785,15 @@ async function loadEventsForMonth() {
   const events = await res.json();
 
   state.eventsByDate = {};
+  state.eventsById = {};
   for (const ev of events) {
+    state.eventsById[ev.id] = ev;
     if (!state.eventsByDate[ev.date]) state.eventsByDate[ev.date] = [];
     state.eventsByDate[ev.date].push(ev);
   }
 
   renderCalendar();
+  renderWeekView();
   renderSidePanel();
 }
 
@@ -632,10 +830,12 @@ function renderCalendar() {
     }
 
     const key = formatDateKey(date);
-    const events = state.eventsByDate[key] || [];
+    const events = getFilteredEventsForDate(key);
+    const allEventsForDot = state.eventsByDate[key] || [];
 
     const div = document.createElement("div");
     div.className = "day";
+    div.dataset.dateKey = key;
 
     if (formatDateKey(date) === formatDateKey(new Date())) {
       div.classList.add("today");
@@ -646,37 +846,90 @@ function renderCalendar() {
     number.textContent = dayNum;
     div.appendChild(number);
 
-    if (events.length > 0) {
-      // puntito
+    if (allEventsForDot.length > 0) {
       const dot = document.createElement("div");
       dot.className = "event-dot";
       div.appendChild(dot);
+    }
 
-      // mini lista
+    if (events.length > 0) {
       const miniList = document.createElement("div");
       miniList.className = "event-list-mini";
 
       events.slice(0, 3).forEach((ev) => {
         const item = document.createElement("div");
-        item.className = "event-mini";
+        const channelClass = (ev.channel || "").replace("/", "-").replace(" ", "-");
+        item.className = "event-mini channel-" + channelClass;
         const time = ev.time?.slice(0, 5) || "";
         const status = ev.posted ? "✓ " : "";
         item.innerHTML = `<strong>${time}</strong> ${status}${ev.channel || ""} – ${ev.title}`;
+        item.draggable = true;
+        item.dataset.eventId = ev.id;
+        item.addEventListener("dragstart", handleDragStart);
         miniList.appendChild(item);
       });
 
       div.appendChild(miniList);
     }
 
+    div.addEventListener("dragover", (e) => e.preventDefault());
+    div.addEventListener("drop", handleDrop);
+
     div.onclick = () => {
       state.selectedDate = date;
       renderSidePanel();
+      renderWeekView();
     };
 
     cells.push(div);
   }
 
   cells.forEach(c => daysEl.appendChild(c));
+}
+
+function renderWeekView() {
+  if (state.viewMode !== "week") return;
+
+  const weekTitleEl = document.getElementById("week-title");
+  const gridEl = document.getElementById("week-grid");
+  gridEl.innerHTML = "";
+
+  const start = getWeekStart(state.selectedDate || new Date());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  weekTitleEl.textContent = `${start.toLocaleDateString("es-ES",{day:"numeric",month:"short"})} - ${end.toLocaleDateString("es-ES",{day:"numeric",month:"short"})}`;
+
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(start);
+    day.setDate(start.getDate() + i);
+    const key = formatDateKey(day);
+
+    const column = document.createElement("div");
+    column.className = "week-day-column";
+
+    const header = document.createElement("div");
+    header.className = "week-day-header";
+    header.textContent = day.toLocaleDateString("es-ES", { weekday:"short", day:"numeric" });
+    column.appendChild(header);
+
+    const evContainer = document.createElement("div");
+    evContainer.className = "week-day-events";
+
+    const events = getFilteredEventsForDate(key);
+    events.forEach(ev => {
+      const item = document.createElement("div");
+      const channelClass = (ev.channel || "").replace("/", "-").replace(" ", "-");
+      item.className = "event-mini channel-" + channelClass;
+      const time = ev.time?.slice(0,5) || "";
+      const status = ev.posted ? "✓ " : "";
+      item.innerHTML = `<strong>${time}</strong> ${status}${ev.channel || ""} – ${ev.title}`;
+      evContainer.appendChild(item);
+    });
+
+    column.appendChild(evContainer);
+    gridEl.appendChild(column);
+  }
 }
 
 /* ========== PANEL DERECHO ========== */
@@ -691,7 +944,7 @@ function renderSidePanel() {
   const list = document.getElementById("events-list");
   list.innerHTML = "";
 
-  const events = state.eventsByDate[key] || [];
+  const events = getFilteredEventsForDate(key);
 
   for (const ev of events) {
     const card = document.createElement("div");
@@ -722,6 +975,13 @@ function renderSidePanel() {
     postedBtn.onclick = () => togglePosted(ev.id);
     actions.appendChild(postedBtn);
 
+    // Duplicar
+    const dupBtn = document.createElement("button");
+    dupBtn.className = "btn-secondary btn";
+    dupBtn.textContent = "Duplicar";
+    dupBtn.onclick = () => duplicateEvent(ev);
+    actions.appendChild(dupBtn);
+
     // Edit
     const editBtn = document.createElement("button");
     editBtn.className = "btn-secondary btn";
@@ -743,7 +1003,7 @@ function renderSidePanel() {
   }
 }
 
-/* ========== MODAL ========== */
+/* ========== MODAL & CRUD ========== */
 const modalBackdrop = document.getElementById("modal-backdrop");
 const fieldDate = document.getElementById("field-date");
 const fieldTime = document.getElementById("field-time");
@@ -774,10 +1034,17 @@ function openModal(dateKey, event = null) {
   state.editingEventId = event ? event.id : null;
 }
 
-function evTimeToInput(t) {
-  if (!t) return "";
-  // por si viene "09:00:00"
-  return t.slice(0,5);
+function duplicateEvent(ev) {
+  modalBackdrop.style.display = "flex";
+
+  fieldDate.value = ev.date;
+  fieldTime.value = evTimeToInput(ev.time) || "09:00";
+  fieldChannel.value = ev.channel || "";
+  fieldTitle.value = ev.title || "";
+  fieldPlatform.value = ev.platform || "";
+  fieldNotes.value = ev.notes || "";
+
+  state.editingEventId = null; // se guarda como nuevo
 }
 
 document.getElementById("modal-save").onclick = async () => {
@@ -841,6 +1108,70 @@ async function togglePosted(id) {
 
   await loadEventsForMonth();
 }
+
+/* ========== DRAG & DROP ========== */
+function handleDragStart(e) {
+  const id = e.currentTarget.dataset.eventId;
+  draggedEventId = id;
+}
+
+async function handleDrop(e) {
+  e.preventDefault();
+  if (!draggedEventId) return;
+
+  const dateKey = e.currentTarget.dataset.dateKey;
+  const ev = state.eventsById[draggedEventId];
+  if (!ev) {
+    draggedEventId = null;
+    return;
+  }
+
+  const payload = {
+    date: dateKey,
+    time: ev.time,
+    title: ev.title,
+    channel: ev.channel,
+    platform: ev.platform,
+    notes: ev.notes,
+  };
+
+  await saveEvent(payload, ev.id);
+  draggedEventId = null;
+}
+
+/* ========== FILTROS ========== */
+const searchInput = document.getElementById("search-input");
+const filterType = document.getElementById("filter-type");
+const filterPlatform = document.getElementById("filter-platform");
+const filterStatus = document.getElementById("filter-status");
+
+searchInput.addEventListener("input", () => {
+  state.filters.search = searchInput.value.trim();
+  renderCalendar();
+  renderWeekView();
+  renderSidePanel();
+});
+
+filterType.addEventListener("change", () => {
+  state.filters.type = filterType.value;
+  renderCalendar();
+  renderWeekView();
+  renderSidePanel();
+});
+
+filterPlatform.addEventListener("change", () => {
+  state.filters.platform = filterPlatform.value;
+  renderCalendar();
+  renderWeekView();
+  renderSidePanel();
+});
+
+filterStatus.addEventListener("change", () => {
+  state.filters.status = filterStatus.value;
+  renderCalendar();
+  renderWeekView();
+  renderSidePanel();
+});
 
 /* ========== BOTÓN NUEVO EVENTO DESDE PANEL ========== */
 document.getElementById("new-event-btn").addEventListener("click", () => {
