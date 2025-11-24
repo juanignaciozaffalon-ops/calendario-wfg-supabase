@@ -141,7 +141,7 @@
        APP
     ========================== */
     .app {
-      max-width: 1300px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 25px;
       display: flex;
@@ -154,6 +154,7 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .app-title {
@@ -161,22 +162,19 @@
       font-weight: bold;
     }
 
+    /* ==========================
+       LAYOUT CALENDARIO + PANEL
+       (FLEX EN LUGAR DE GRID)
+    ========================== */
     .calendar-container {
-      display: grid;
-      grid-template-columns: 2fr 1.2fr;
+      display: flex;
+      align-items: flex-start;
       gap: 20px;
     }
 
-    @media (max-width: 900px) {
-      .calendar-container {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* ==========================
-       CALENDARIO
-    ========================== */
     .calendar {
+      flex: 1 1 auto;
+      min-width: 0;
       background: #0f172a;
       border: 1px solid var(--border);
       padding: 20px;
@@ -184,6 +182,32 @@
       box-shadow: var(--shadow);
     }
 
+    .side-panel {
+      flex: 0 0 340px;          /* ancho fijo cómodo */
+      max-width: 340px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (max-width: 1100px) {
+      .calendar-container {
+        flex-direction: column;
+      }
+      .side-panel {
+        flex: 1 1 auto;
+        max-width: 100%;
+      }
+    }
+
+    /* ==========================
+       CONTROLES CALENDARIO
+    ========================== */
     .calendar-controls {
       display: flex;
       justify-content: space-between;
@@ -302,9 +326,7 @@
       border-left-color: #eab308;
     }
 
-    /* ==========================
-       VISTA SEMANAL
-    ========================== */
+    /* VISTA SEMANAL */
     .week-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -334,20 +356,7 @@
       gap: 4px;
     }
 
-    /* ==========================
-       PANEL DERECHO
-    ========================== */
-    .side-panel {
-      background: #0f172a;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
+    /* PANEL DERECHO INTERIOR */
     .filters {
       margin: 8px 0 10px;
       display: flex;
@@ -409,9 +418,7 @@
       color: #fef9c3;
     }
 
-    /* ==========================
-       MODAL
-    ========================== */
+    /* MODAL */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -449,9 +456,7 @@
 
 <body>
 
-<!-- =========================================
-     LOGIN
-========================================= -->
+<!-- LOGIN -->
 <div class="login-overlay" id="login-overlay">
   <div class="login-card">
     <div class="login-title">Acceso interno WFG</div>
@@ -475,17 +480,10 @@
   </div>
 </div>
 
-
-<!-- =========================================
-     APP UI
-========================================= -->
 <div class="app">
   <div class="app-header">
     <div class="app-title">📅 Calendario Marketing WFG</div>
-
-    <div>
-      <button class="btn" id="logout-btn">Cerrar sesión</button>
-    </div>
+    <button class="btn" id="logout-btn">Cerrar sesión</button>
   </div>
 
   <div class="calendar-container">
@@ -557,10 +555,7 @@
   </div>
 </div>
 
-
-<!-- =========================================
-     MODAL EVENTO
-========================================= -->
+<!-- MODAL -->
 <div class="modal-backdrop" id="modal-backdrop">
   <div class="modal">
     <div class="modal-title" id="modal-title">Nuevo evento</div>
@@ -612,10 +607,6 @@
   </div>
 </div>
 
-
-<!-- =========================================
-     JS APP
-========================================= -->
 <script>
 const API_BASE = "/api";
 
@@ -637,7 +628,7 @@ const state = {
 
 let draggedEventId = null;
 
-/* ========== LOGIN ========== */
+/* ===== LOGIN ===== */
 const loginOverlay = document.getElementById("login-overlay");
 const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
@@ -680,14 +671,14 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   location.reload();
 });
 
-/* ========== HELPERS ========== */
+/* ===== HELPERS ===== */
 function formatDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
 
 function evTimeToInput(t) {
   if (!t) return "";
-  return t.slice(0, 5); // "09:00:00" → "09:00"
+  return t.slice(0, 5);
 }
 
 function matchesFilters(ev) {
@@ -720,7 +711,7 @@ function getWeekStart(date) {
   return d;
 }
 
-/* ========== CALENDARIO BASE ========== */
+/* ===== CALENDARIO BASE ===== */
 function initCalendar() {
   const now = new Date();
   state.currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -932,7 +923,7 @@ function renderWeekView() {
   }
 }
 
-/* ========== PANEL DERECHO ========== */
+/* ===== PANEL DERECHO ===== */
 function renderSidePanel() {
   if (!state.selectedDate) return;
 
@@ -968,28 +959,24 @@ function renderSidePanel() {
     const actions = document.createElement("div");
     actions.className = "event-actions";
 
-    // Botón marcar posteado / pendiente
     const postedBtn = document.createElement("button");
     postedBtn.className = "btn-posted btn";
     postedBtn.textContent = ev.posted ? "✓ Posteado" : "✓ Marcar posteado";
     postedBtn.onclick = () => togglePosted(ev.id);
     actions.appendChild(postedBtn);
 
-    // Duplicar
     const dupBtn = document.createElement("button");
     dupBtn.className = "btn-secondary btn";
     dupBtn.textContent = "Duplicar";
     dupBtn.onclick = () => duplicateEvent(ev);
     actions.appendChild(dupBtn);
 
-    // Edit
     const editBtn = document.createElement("button");
     editBtn.className = "btn-secondary btn";
     editBtn.textContent = "Editar";
     editBtn.onclick = () => openModal(key, ev);
     actions.appendChild(editBtn);
 
-    // Delete solo admin
     if (state.user && state.user.role === "admin") {
       const delBtn = document.createElement("button");
       delBtn.className = "btn-danger btn";
@@ -1003,7 +990,7 @@ function renderSidePanel() {
   }
 }
 
-/* ========== MODAL & CRUD ========== */
+/* ===== MODAL & CRUD ===== */
 const modalBackdrop = document.getElementById("modal-backdrop");
 const fieldDate = document.getElementById("field-date");
 const fieldTime = document.getElementById("field-time");
@@ -1044,7 +1031,7 @@ function duplicateEvent(ev) {
   fieldPlatform.value = ev.platform || "";
   fieldNotes.value = ev.notes || "";
 
-  state.editingEventId = null; // se guarda como nuevo
+  state.editingEventId = null;
 }
 
 document.getElementById("modal-save").onclick = async () => {
@@ -1109,7 +1096,7 @@ async function togglePosted(id) {
   await loadEventsForMonth();
 }
 
-/* ========== DRAG & DROP ========== */
+/* ===== DRAG & DROP ===== */
 function handleDragStart(e) {
   const id = e.currentTarget.dataset.eventId;
   draggedEventId = id;
@@ -1139,7 +1126,7 @@ async function handleDrop(e) {
   draggedEventId = null;
 }
 
-/* ========== FILTROS ========== */
+/* ===== FILTROS ===== */
 const searchInput = document.getElementById("search-input");
 const filterType = document.getElementById("filter-type");
 const filterPlatform = document.getElementById("filter-platform");
@@ -1173,7 +1160,7 @@ filterStatus.addEventListener("change", () => {
   renderSidePanel();
 });
 
-/* ========== BOTÓN NUEVO EVENTO DESDE PANEL ========== */
+/* ===== NUEVO EVENTO DESDE PANEL ===== */
 document.getElementById("new-event-btn").addEventListener("click", () => {
   const date = state.selectedDate || new Date();
   openModal(formatDateKey(date));
