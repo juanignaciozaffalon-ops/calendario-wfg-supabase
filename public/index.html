@@ -90,6 +90,12 @@
       border-color: var(--accent);
     }
 
+    /* iconos blancos en date/time */
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+    }
+
     .btn {
       padding: 8px 14px;
       border-radius: 8px;
@@ -116,6 +122,12 @@
       border-color: #f87171;
       background: #f87171;
       color: white;
+    }
+
+    .btn-posted {
+      border-color: #22c55e;
+      background: #22c55e;
+      color: #022c22;
     }
 
     .login-error {
@@ -286,7 +298,30 @@
       margin-top: 10px;
       display: flex;
       justify-content: flex-end;
-      gap: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+
+    .badge-posted {
+      background: rgba(34,197,94,0.12);
+      border-color: #22c55e;
+      color: #bbf7d0;
+    }
+
+    .badge-pending {
+      background: rgba(234,179,8,0.12);
+      border-color: #eab308;
+      color: #fef9c3;
     }
 
     /* ==========================
@@ -420,15 +455,13 @@
     </div>
 
     <div class="field-group">
-      <label class="field-label">Tipo</label>
+      <label class="field-label">Tipo de contenido</label>
       <select id="field-channel">
         <option value="">Seleccionar…</option>
-        <option value="Historia">Historia</option>
+        <option value="Story">Story</option>
         <option value="Reel">Reel</option>
         <option value="TikTok">TikTok</option>
-        <option value="Post feed">Post feed</option>
-        <option value="Email">Email</option>
-        <option value="Otro">Otro</option>
+        <option value="Carrusel/posteo">Carrusel/posteo</option>
       </select>
     </div>
 
@@ -443,10 +476,6 @@
         <option value="">Seleccionar…</option>
         <option value="Instagram">Instagram</option>
         <option value="TikTok">TikTok</option>
-        <option value="Facebook">Facebook</option>
-        <option value="YouTube">YouTube</option>
-        <option value="Email">Email</option>
-        <option value="Otro">Otro</option>
       </select>
     </div>
 
@@ -631,7 +660,8 @@ function renderCalendar() {
         const item = document.createElement("div");
         item.className = "event-mini";
         const time = ev.time?.slice(0, 5) || "";
-        item.innerHTML = `<strong>${time}</strong> ${ev.channel || ""} – ${ev.title}`;
+        const status = ev.posted ? "✓ " : "";
+        item.innerHTML = `<strong>${time}</strong> ${status}${ev.channel || ""} – ${ev.title}`;
         miniList.appendChild(item);
       });
 
@@ -667,21 +697,39 @@ function renderSidePanel() {
     const card = document.createElement("div");
     card.className = "event-card";
 
+    const badge = ev.posted
+      ? `<span class="badge badge-posted">✓ Posteado</span>`
+      : `<span class="badge badge-pending">Pendiente</span>`;
+
     card.innerHTML = `
-      <div><strong>${ev.time.slice(0,5)}</strong> — ${ev.title}</div>
-      <div style="color:#94a3b8; font-size:0.85rem;">${ev.channel || ""} | ${ev.platform || ""}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div>
+          <div><strong>${ev.time.slice(0,5)}</strong> — ${ev.title}</div>
+          <div style="color:#94a3b8; font-size:0.85rem;">${ev.channel || ""} | ${ev.platform || ""}</div>
+        </div>
+        ${badge}
+      </div>
       ${ev.notes ? `<div style="margin-top:6px;">${ev.notes}</div>` : ""}
     `;
 
     const actions = document.createElement("div");
     actions.className = "event-actions";
 
+    // Botón marcar posteado / pendiente
+    const postedBtn = document.createElement("button");
+    postedBtn.className = "btn-posted btn";
+    postedBtn.textContent = ev.posted ? "✓ Posteado" : "✓ Marcar posteado";
+    postedBtn.onclick = () => togglePosted(ev.id);
+    actions.appendChild(postedBtn);
+
+    // Edit
     const editBtn = document.createElement("button");
     editBtn.className = "btn-secondary btn";
     editBtn.textContent = "Editar";
     editBtn.onclick = () => openModal(key, ev);
     actions.appendChild(editBtn);
 
+    // Delete solo admin
     if (state.user && state.user.role === "admin") {
       const delBtn = document.createElement("button");
       delBtn.className = "btn-danger btn";
@@ -717,13 +765,19 @@ function openModal(dateKey, event = null) {
   modalBackdrop.style.display = "flex";
 
   fieldDate.value = dateKey;
-  fieldTime.value = event ? event.time || "09:00" : "09:00";
+  fieldTime.value = event ? (evTimeToInput(event.time) || "09:00") : "09:00";
   fieldChannel.value = event ? event.channel || "" : "";
   fieldTitle.value = event ? event.title || "" : "";
   fieldPlatform.value = event ? event.platform || "" : "";
   fieldNotes.value = event ? event.notes || "" : "";
 
   state.editingEventId = event ? event.id : null;
+}
+
+function evTimeToInput(t) {
+  if (!t) return "";
+  // por si viene "09:00:00"
+  return t.slice(0,5);
 }
 
 document.getElementById("modal-save").onclick = async () => {
@@ -770,6 +824,20 @@ async function deleteEvent(id) {
     method: "DELETE",
     credentials: "include",
   });
+
+  await loadEventsForMonth();
+}
+
+async function togglePosted(id) {
+  const res = await fetch(`${API_BASE}/events/${id}/toggle-posted`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (res.status === 401) {
+    loginOverlay.style.display = "flex";
+    return;
+  }
 
   await loadEventsForMonth();
 }
