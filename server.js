@@ -1,4 +1,4 @@
-// server.js — Calendario WFG con Supabase + Login + Roles
+// server.js — Calendario WFG con Supabase + Login + Roles + "posteado"
 import express from "express";
 import cors from "cors";
 import session from "express-session";
@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// IMPORTANTE para que las cookies funcionen detrás del proxy de Render
+// Render usa proxy → necesario para que funcionen cookies
 app.set("trust proxy", 1);
 
 app.use(express.json());
@@ -35,15 +35,14 @@ app.use(
 // ===============================
 // Sesión (login persistente)
 // ===============================
-// Para evitar problemas de 401 en Render, dejamos secure: false.
-// Es una herramienta interna, así que está bien para este caso.
+// secure: false para que la cookie se guarde bien en Render y local.
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "super-secret-wfg",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,        // <--- CLAVE: siempre false así la cookie se guarda
+      secure: false,
       sameSite: "lax",
     },
   })
@@ -179,6 +178,7 @@ app.post("/api/events", requireAuth, async (req, res) => {
       platform: platform || null,
       notes: notes || null,
       created_by: req.session.user.id,
+      // posted usa default false en la DB
     })
     .select("*")
     .single();
@@ -220,6 +220,42 @@ app.put("/api/events/:id", requireAuth, async (req, res) => {
   }
 
   if (!data) return res.status(404).json({ error: "No existe" });
+
+  res.json(data);
+});
+
+// POST /api/events/:id/toggle-posted — marcar / desmarcar posteado
+app.post("/api/events/:id/toggle-posted", requireAuth, async (req, res) => {
+  const { id } = req.params;
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("marketing_events")
+    .select("id, posted")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error("Supabase error leyendo evento (toggle):", fetchError);
+    return res.status(500).json({ error: "Error interno" });
+  }
+
+  if (!existing) {
+    return res.status(404).json({ error: "Evento no encontrado" });
+  }
+
+  const newPosted = !existing.posted;
+
+  const { data, error: updateError } = await supabase
+    .from("marketing_events")
+    .update({ posted: newPosted })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError) {
+    console.error("Supabase error toggling posted:", updateError);
+    return res.status(500).json({ error: "Error al actualizar estado" });
+  }
 
   res.json(data);
 });
